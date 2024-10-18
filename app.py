@@ -69,8 +69,8 @@ st.line_chart(line_data)
 
 # Open Lstm model and do forecasting
 import pickle
-pickle_path = r"C:\Users\Edwin\Python\bootcamp\Projects\lstm\model\lstm.pkl"
-pickle_scaler_path = r"C:\Users\Edwin\Python\bootcamp\Projects\lstm\model\scaler.pkl"
+pickle_path = "./model/lstm.pkl"
+pickle_scaler_path = "./model/scaler.pkl"
 
 with open(pickle_path, 'rb') as file:
     saved_model = pickle.load(file)
