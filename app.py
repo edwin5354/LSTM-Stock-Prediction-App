@@ -92,36 +92,42 @@ data_close = show_data['Close'].values
 data_close = data_close.reshape(-1, 1)
 data_scaled = scaler.transform(data_close)
 
-# Define the time step for LSTM  
-time_step = 100  # Using last 100 days for prediction  
-X, Y = create_dataset(data_scaled, time_step)
+def make_predictions(prediction_days):
+    # Define the time step for LSTM (you might want to keep this constant)
+    time_step = 100  # Using last 100 days for prediction
 
-# Reshape X to be [samples, time steps, features]
-X = X.reshape(X.shape[0], X.shape[1], 1)
+    # Create dataset for LSTM predictions using the latest available data  
+    X, Y = create_dataset(data_scaled, time_step)
+    X = X.reshape(X.shape[0], X.shape[1], 1)
 
-# Make predictions using the LSTM model  
-predicted_price_scaled = saved_model.predict(X)
-predicted_price = scaler.inverse_transform(predicted_price_scaled)
+    # Make predictions using the LSTM model  
+    predicted_price_scaled = saved_model.predict(X)
+    predicted_price = scaler.inverse_transform(predicted_price_scaled)
 
-st.subheader('Stock Closing Price Prediction')
-prediction_days = st.slider("How many days would you like to predict?", 1, 365)
+    # Prepare predicted prices for plotting  
+    predicted_dates = pd.date_range(start = new_data.index[-1] + pd.Timedelta(days = 1), periods = prediction_days, freq = 'B')
+    predicted_df = pd.DataFrame(data = predicted_price[-prediction_days:], index = predicted_dates, columns = ['Predicted Close'])
 
-# Prepare predicted prices for plotting  
-predicted_dates = pd.date_range(start=new_data.index[-1] + pd.Timedelta(days=1), periods= prediction_days, freq='B')
-predicted_df = pd.DataFrame(data=predicted_price[-prediction_days:], index=predicted_dates, columns=['Predicted Close'])
+    return predicted_df
 
 def price_difference(latest_close_price, predicted_df):
     return ((predicted_df['Predicted Close'].iloc[-1] - latest_close_price) / latest_close_price) * 100
 
+st.subheader('Stock Closing Price Prediction')
+prediction_days = st.slider("How many days would you like to predict?", 1, 365)
+predicted_df = make_predictions(prediction_days)
+
 price_diff = price_difference(latest_close_price, predicted_df)
 
 # Combine actual and predicted prices for visualization  
-combined_df = pd.concat([show_data.iloc[-365 :][['Close']], predicted_df], axis=1)
+combined_df = pd.concat([show_data.iloc[-365 :][['Close']], predicted_df], axis = 1)
 combined_df.columns = ['Actual Close', 'Predicted Close']
 
-col4 = st.columns(1)
-with col4[0]:
+col4, col5 = st.columns(2)
+with col4:
     st.metric('Predicted price change', f'{price_diff:.2f}%')
+with col5:
+    st.metric('Predicted Close Price', f'${predicted_df["Predicted Close"].iloc[-1]:.2f}')
 
 # Plot the actual vs predicted prices  
 st.line_chart(combined_df)
