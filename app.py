@@ -79,7 +79,7 @@ with open(pickle_scaler_path, 'rb') as scaler_file:
     scaler = pickle.load(scaler_file)
 
 # Prepare the data for LSTM forecasting  
-def create_dataset(data, time_step=1):
+def create_dataset(data, time_step=100):
     X, Y = [], []
     for i in range(len(data) - time_step - 1):
         a = data[i:(i + time_step), 0]
@@ -93,7 +93,6 @@ data_close = data_close.reshape(-1, 1)
 data_scaled = scaler.transform(data_close)
 
 def make_predictions(prediction_days):
-    # Define the time step for LSTM (you might want to keep this constant)
     time_step = 100  # Using last 100 days for prediction
 
     # Create dataset for LSTM predictions using the latest available data  
@@ -114,8 +113,7 @@ def price_difference(latest_close_price, predicted_df):
     return ((predicted_df['Predicted Close'].iloc[-1] - latest_close_price) / latest_close_price) * 100
 
 st.subheader('Stock Closing Price Prediction')
-prediction_days = st.slider("How many days would you like to predict?", 1, 365)
-predicted_df = make_predictions(prediction_days)
+predicted_df = make_predictions(prediction_days = 100)
 
 price_diff = price_difference(latest_close_price, predicted_df)
 
@@ -125,9 +123,9 @@ combined_df.columns = ['Actual Close', 'Predicted Close']
 
 col4, col5 = st.columns(2)
 with col4:
-    st.metric('Predicted price change', f'{price_diff:.2f}%')
+    st.metric('Predicted price change After 100 Days', f'{price_diff:.2f}%')
 with col5:
-    st.metric('Predicted Close Price', f'${predicted_df["Predicted Close"].iloc[-1]:.2f}')
+    st.metric('Predicted Close Price After 100 Days', f'${predicted_df["Predicted Close"].iloc[-1]:.2f}')
 
 # Plot the actual vs predicted prices  
 st.line_chart(combined_df)
